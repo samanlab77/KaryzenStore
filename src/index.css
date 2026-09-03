@@ -1,0 +1,140 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-background: hsl(220, 20%, 7%);
+    --color-surface: hsl(220, 18%, 11%);
+    --color-surface-hover: hsl(220, 16%, 15%);
+    --color-border: hsla(220, 15%, 85%, 0.08);
+    --color-primary: hsl(38, 100%, 55%);
+    --color-primary-hover: hsl(38, 100%, 65%);
+    --color-text: hsl(210, 20%, 95%);
+    --color-text-secondary: hsl(215, 15%, 65%);
+    --color-success: hsl(152, 69%, 45%);
+    --color-danger: hsl(0, 76%, 62%);
+    --color-info: hsl(199, 94%, 60%);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: "Inter", sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  ::selection {
+    background-color: hsla(38, 100%, 55%, 0.3);
+    color: var(--color-text);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsla(220, 15%, 85%, 0.15);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsla(220, 15%, 85%, 0.25);
+  }
+}
+
+@layer components {
+  /* Glass Card */
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Gold CTA Button */
+  .btn-primary {
+    @apply bg-primary text-black font-semibold rounded-lg px-6 py-3
+      shadow-glow transition-all duration-fast ease-out
+      hover:bg-primary-hover hover:shadow-glow-lg
+      active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Surface Card */
+  .card {
+    @apply bg-surface rounded-xl border border-white/5 shadow-card
+      transition-all duration-normal ease-out;
+  }
+
+  .card:hover {
+    @apply bg-surface-hover border-primary/40 shadow-card-hover
+      -translate-y-1;
+  }
+
+  /* Glass Sidebar */
+  .sidebar-glass {
+    @apply bg-white/[0.03] backdrop-blur-xl border-r border-white/5;
+  }
+
+  /* Form Input */
+  .input {
+    @apply bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3
+      text-text placeholder:text-text-secondary
+      focus:outline-none focus:border-primary transition-colors duration-fast;
+  }
+
+  /* Badge / Pill */
+  .badge-success {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+      bg-success/15 text-success;
+  }
+
+  .badge-danger {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+      bg-danger/15 text-danger;
+  }
+
+  .badge-info {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+      bg-info/15 text-info;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+      bg-primary/15 text-primary;
+  }
+
+  .badge-muted {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+      bg-white/5 text-text-secondary;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-amber-300 bg-clip-text text-transparent;
+  }
+}
