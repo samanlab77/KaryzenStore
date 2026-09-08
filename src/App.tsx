@@ -35,13 +35,18 @@ import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 
 // Auth
 import AuthPage from "@/pages/auth/AuthPage";
+import AuthSync from "@/components/auth/AuthSync";
+import RequireAuth from "@/components/auth/RequireAuth";
+import { isClerkEnabled } from "@/lib/clerk";
 
 // Success
 import OrderSuccessPage from "@/pages/member/OrderSuccessPage";
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      {isClerkEnabled && <AuthSync />}
+      <Routes>
       {/* Public Routes */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
@@ -59,7 +64,7 @@ export default function App() {
       <Route path="/sign-up/*" element={<AuthPage />} />
 
       {/* Member Routes */}
-      <Route element={<MemberLayout />}>
+      <Route element={<RequireAuth><MemberLayout /></RequireAuth>}>
         <Route path="/dashboard" element={<MemberDashboardPage />} />
         <Route path="/dashboard/orders" element={<MemberOrdersPage />} />
         <Route path="/dashboard/licenses" element={<MemberLicensesPage />} />
@@ -71,7 +76,7 @@ export default function App() {
       <Route path="/order/:orderNumber/success" element={<OrderSuccessPage />} />
 
       {/* Admin Routes */}
-      <Route element={<AdminLayout />}>
+      <Route element={<RequireAuth adminOnly><AdminLayout /></RequireAuth>}>
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/products" element={<AdminProductsPage />} />
         <Route path="/admin/products/new" element={<AdminProductNewPage />} />
@@ -84,6 +89,7 @@ export default function App() {
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }

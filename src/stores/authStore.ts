@@ -1,8 +1,9 @@
 import { create } from "zustand";
+import { isClerkEnabled } from "@/lib/clerk";
 
 export type UserRole = "customer" | "staff" | "superadmin";
 
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
@@ -28,8 +29,10 @@ const defaultUser: User = {
 };
 
 export const useAuthStore = create<AuthStore>()((set, get) => ({
-  user: defaultUser,
-  isAuthenticated: true,
+  // In Clerk mode the user starts signed out until AuthSync completes.
+  // In demo mode (no Clerk key) we keep the demo customer signed in.
+  user: isClerkEnabled ? null : defaultUser,
+  isAuthenticated: isClerkEnabled ? false : true,
 
   login: (user) => set({ user, isAuthenticated: true }),
 

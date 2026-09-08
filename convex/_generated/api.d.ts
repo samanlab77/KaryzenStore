@@ -8,9 +8,12 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as categories from "../categories.js";
 import type * as coupons from "../coupons.js";
+import type * as http from "../http.js";
 import type * as licenses from "../licenses.js";
+import type * as midtrans from "../midtrans.js";
 import type * as orders from "../orders.js";
 import type * as productFiles from "../productFiles.js";
 import type * as products from "../products.js";
@@ -24,9 +27,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   categories: typeof categories;
   coupons: typeof coupons;
+  http: typeof http;
   licenses: typeof licenses;
+  midtrans: typeof midtrans;
   orders: typeof orders;
   productFiles: typeof productFiles;
   products: typeof products;

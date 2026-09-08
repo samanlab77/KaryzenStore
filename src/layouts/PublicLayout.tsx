@@ -9,10 +9,14 @@ import {
   LogOut,
   LayoutDashboard,
   Shield,
+  Loader2,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
+import type { User as StoreUser } from "@/stores/authStore";
 import { cn } from "@/lib/utils";
+import { isClerkEnabled } from "@/lib/clerk";
+import { useAuth, useClerk } from "@clerk/clerk-react";
 
 const navLinks = [
   { label: "Beranda", href: "/" },
@@ -23,10 +27,8 @@ const navLinks = [
 
 export default function PublicLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
   const itemCount = useCartStore((s) => s.getItemCount());
-  const { user, isAuthenticated, logout } = useAuthStore();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -78,79 +80,7 @@ export default function PublicLayout() {
               </Link>
 
               {/* Auth */}
-              {isAuthenticated ? (
-                <div className="relative">
-                  <button
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
-                  >
-                    <img
-                      src={user?.avatarUrl}
-                      alt={user?.name}
-                      className="w-7 h-7 rounded-full bg-white/10"
-                    />
-                    <ChevronDown className="w-3.5 h-3.5 text-text-secondary" />
-                  </button>
-
-                  {/* Dropdown */}
-                  {userMenuOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setUserMenuOpen(false)}
-                      />
-                      <div className="absolute right-0 mt-2 w-56 bg-surface border border-white/10 rounded-xl shadow-glass z-50 py-2 animate-fade-in">
-                        <div className="px-4 py-2 border-b border-white/5">
-                          <p className="text-sm font-medium text-text">
-                            {user?.name}
-                          </p>
-                          <p className="text-xs text-text-secondary">
-                            {user?.email}
-                          </p>
-                        </div>
-                        <Link
-                          to="/dashboard"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text hover:bg-white/5 transition-colors"
-                        >
-                          <LayoutDashboard className="w-4 h-4" />
-                          Dasbor Saya
-                        </Link>
-                        {(user?.role === "staff" ||
-                          user?.role === "superadmin") && (
-                          <Link
-                            to="/admin"
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text hover:bg-white/5 transition-colors"
-                          >
-                            <Shield className="w-4 h-4" />
-                            Admin Panel
-                          </Link>
-                        )}
-                        <hr className="border-white/5 my-1" />
-                        <button
-                          onClick={() => {
-                            logout();
-                            setUserMenuOpen(false);
-                          }}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors w-full"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Keluar
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  to="/sign-in"
-                  className="btn-primary text-sm !px-4 !py-2"
-                >
-                  <User className="w-4 h-4 mr-1.5 inline" />
-                  Masuk
-                </Link>
-              )}
+              <HeaderAuth />
 
               {/* Mobile Toggle */}
               <button
@@ -292,5 +222,116 @@ export default function PublicLayout() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/* ── Header auth (demo mode vs Clerk mode) ── */
+
+function UserMenu({ user, onLogout }: { user: StoreUser; onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
+      >
+        <img
+          src={user.avatarUrl}
+          alt={user.name}
+          className="w-7 h-7 rounded-full bg-white/10"
+        />
+        <ChevronDown className="w-3.5 h-3.5 text-text-secondary" />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-2 w-56 bg-surface border border-white/10 rounded-xl shadow-glass z-50 py-2 animate-fade-in">
+            <div className="px-4 py-2 border-b border-white/5">
+              <p className="text-sm font-medium text-text">{user.name}</p>
+              <p className="text-xs text-text-secondary">{user.email}</p>
+            </div>
+            <Link
+              to="/dashboard"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text hover:bg-white/5 transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dasbor Saya
+            </Link>
+            {(user.role === "staff" || user.role === "superadmin") && (
+              <Link
+                to="/admin"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text hover:bg-white/5 transition-colors"
+              >
+                <Shield className="w-4 h-4" />
+                Admin Panel
+              </Link>
+            )}
+            <hr className="border-white/5 my-1" />
+            <button
+              onClick={() => {
+                onLogout();
+                setOpen(false);
+              }}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors w-full"
+            >
+              <LogOut className="w-4 h-4" />
+              Keluar
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function HeaderAuth() {
+  const { user, isAuthenticated, logout } = useAuthStore();
+
+  if (!isClerkEnabled) {
+    if (!isAuthenticated) {
+      return (
+        <Link to="/sign-in" className="btn-primary text-sm !px-4 !py-2">
+          <User className="w-4 h-4 mr-1.5 inline" />
+          Masuk
+        </Link>
+      );
+    }
+    return user ? <UserMenu user={user} onLogout={logout} /> : null;
+  }
+
+  return <ClerkHeaderAuth />;
+}
+
+function ClerkHeaderAuth() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
+  const { user, logout } = useAuthStore();
+
+  if (!isLoaded) {
+    return <Loader2 className="w-5 h-5 text-text-secondary animate-spin" />;
+  }
+  if (!isSignedIn) {
+    return (
+      <Link to="/sign-in" className="btn-primary text-sm !px-4 !py-2">
+        <User className="w-4 h-4 mr-1.5 inline" />
+        Masuk
+      </Link>
+    );
+  }
+  if (!user) {
+    // Session active but AuthSync hasn't finished syncing yet.
+    return <Loader2 className="w-5 h-5 text-text-secondary animate-spin" />;
+  }
+  return (
+    <UserMenu
+      user={user}
+      onLogout={() => {
+        void signOut();
+        logout();
+      }}
+    />
   );
 }

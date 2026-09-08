@@ -122,7 +122,7 @@ export const categories: Category[] = [
     name: "Desain Grafis",
     slug: "desain-grafis",
     description: "Aset desain, ikon, ilustrasi, dan elemen visual berkualitas tinggi.",
-    coverImage: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop",
+    coverImage: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&h=400&fit=crop",
     isActive: true,
     productCount: 3,
   },

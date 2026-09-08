@@ -6,18 +6,25 @@ import {
   ArrowLeft,
   CheckCircle2,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 import { formatIDR } from "@/lib/utils";
-import { coupons } from "@/lib/data/dummy";
+import { useAction, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { loadSnap, midtransClientKey } from "@/lib/midtrans";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, couponCode, getSubtotal, clearCart } = useCartStore();
   const { user, isAuthenticated } = useAuthStore();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState("");
   const [email, setEmail] = useState(user?.email || "");
+
+  const createOrder = useMutation(api.orders.createFromCart);
+  const createSnapTransaction = useAction(api.midtrans.createSnapTransaction);
 
   if (!isAuthenticated) {
     return (
@@ -52,34 +59,55 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getSubtotal();
-  let discount = 0;
-  if (couponCode) {
-    const coupon = coupons.find(
-      (c) => c.code === couponCode && c.isActive
-    );
-    if (coupon) {
-      const now = Date.now();
-      if (now >= coupon.startsAt && now <= coupon.expiresAt) {
-        discount = Math.min(
-          Math.floor(subtotal * (coupon.percentage / 100)),
-          coupon.maxDiscount || Infinity
-        );
-      }
-    }
-  }
+  const discount = 0; // recomputed server-side at checkout
   const taxableAmount = subtotal - discount;
   const tax = Math.floor(taxableAmount * 0.1);
   const total = taxableAmount + tax;
-  const orderNumber = `KZN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(
-    Math.floor(Math.random() * 9999)
-  ).padStart(4, "0")}`;
 
   const handlePay = async () => {
+    if (!user) return;
+    setError("");
     setIsProcessing(true);
-    // Simulate payment processing
-    await new Promise((r) => setTimeout(r, 2000));
-    clearCart();
-    navigate(`/order/${orderNumber}/success`);
+    try {
+      const orderId = await createOrder({
+        customerName: user.name,
+        customerEmail: email.trim() || user.email,
+        items: items.map((i) => ({
+          productId: i.productId as any,
+          quantity: i.quantity,
+        })),
+        couponCode: couponCode ?? undefined,
+      });
+
+      const snap = await createSnapTransaction({ orderId });
+      await loadSnap(midtransClientKey);
+
+      window.snap?.pay(snap.token, {
+        onSuccess: () => {
+          clearCart();
+          navigate(`/order/${snap.orderNumber}/success`);
+        },
+        onPending: () => {
+          clearCart();
+          navigate(`/order/${snap.orderNumber}/success`);
+        },
+        onError: () => {
+          setIsProcessing(false);
+          setError("Pembayaran gagal. Silakan coba lagi.");
+        },
+        onClose: () => {
+          setIsProcessing(false);
+        },
+      });
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      setIsProcessing(false);
+      setError(
+        err?.message?.includes("belum siap") || err?.message?.includes("konfigurasi")
+          ? err.message
+          : "Gagal memproses checkout. Silakan coba lagi."
+      );
+    }
   };
 
   return (
@@ -180,12 +208,6 @@ export default function CheckoutPage() {
                 <span>Subtotal</span>
                 <span>{formatIDR(subtotal)}</span>
               </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-success">
-                  <span>Diskon ({couponCode})</span>
-                  <span>-{formatIDR(discount)}</span>
-                </div>
-              )}
               <div className="flex justify-between text-text-secondary">
                 <span>Pajak (10%)</span>
                 <span>{formatIDR(tax)}</span>
@@ -203,6 +225,13 @@ export default function CheckoutPage() {
               </span>
             </div>
 
+            {error && (
+              <div className="flex items-start gap-2 text-xs text-danger bg-danger/10 border border-danger/20 rounded-lg p-3 mb-4">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
             <button
               onClick={handlePay}
               disabled={isProcessing}
@@ -211,7 +240,7 @@ export default function CheckoutPage() {
               {isProcessing ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Memproses...
+                  Menyiapkan Pembayaran...
                 </>
               ) : (
                 <>

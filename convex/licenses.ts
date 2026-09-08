@@ -48,14 +48,20 @@ export const getForUser = query({
 
     for (const order of userOrders) {
       for (const item of order.items) {
-        if (item.productType === "license" && item.licenseCode) {
-          licenseCodes.push({
-            productTitle: item.productTitle,
-            productSlug: item.productSlug,
-            licenseCode: item.licenseCode,
-            coverImage: item.coverImage,
-            unitPrice: item.unitPrice,
-          });
+        const codes = [
+          ...(item.licenseCode ? [item.licenseCode] : []),
+          ...(item.licenseCodes ?? []),
+        ];
+        if (item.productType === "license" && codes.length > 0) {
+          for (const licenseCode of codes) {
+            licenseCodes.push({
+              productTitle: item.productTitle,
+              productSlug: item.productSlug,
+              licenseCode,
+              coverImage: item.coverImage,
+              unitPrice: item.unitPrice,
+            });
+          }
         }
       }
     }

@@ -42,6 +42,7 @@ export interface NormalizedOrderItem {
   unitPrice: number;
   quantity: number;
   licenseCode?: string;
+  licenseCodes?: string[];
 }
 
 export interface NormalizedOrder {

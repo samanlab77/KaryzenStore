@@ -100,6 +100,7 @@ export default defineSchema({
         unitPrice: v.number(),
         quantity: v.number(),
         licenseCode: v.optional(v.string()),
+        licenseCodes: v.optional(v.array(v.string())),
       })
     ),
     couponCode: v.optional(v.string()),
@@ -114,6 +115,10 @@ export default defineSchema({
     taxAmount: v.number(),
     totalAmount: v.number(),
     paymentGateway: v.string(),
+    snapToken: v.optional(v.string()),
+    snapRedirectUrl: v.optional(v.string()),
+    midtransTransactionId: v.optional(v.string()),
+    midtransPaymentType: v.optional(v.string()),
     paidAt: v.optional(v.number()),
     createdAt: v.number(),
   })

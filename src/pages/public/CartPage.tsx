@@ -3,9 +3,11 @@ import { Trash2, ShoppingBag, ArrowRight, Tag, ShoppingCart } from "lucide-react
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 import { formatIDR } from "@/lib/utils";
-import { coupons } from "@/lib/data/dummy";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { coupons as dummyCoupons } from "@/lib/data/dummy";
+import { isConvexConfigured } from "@/lib/convexEnv";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, couponCode, setCouponCode, getSubtotal, clearCart } =
@@ -17,31 +19,37 @@ export default function CartPage() {
 
   const subtotal = getSubtotal();
 
-  // Calculate coupon discount
-  let discount = 0;
-  let taxRate = 0.1;
-  if (couponCode) {
-    const coupon = coupons.find(
-      (c) => c.code === couponCode && c.isActive
-    );
-    if (coupon) {
-      const now = Date.now();
-      const isValidPeriod =
-        now >= coupon.startsAt && now <= coupon.expiresAt;
-      const meetsMinimum = subtotal >= coupon.minSubtotal;
-      const notMaxedOut =
-        !coupon.maxUses || coupon.currentUses < coupon.maxUses;
+  // Server-side validation via Convex when configured, dummy fallback otherwise.
+  const validation = useQuery(
+    api.coupons.validate,
+    isConvexConfigured && couponCode && subtotal > 0
+      ? { code: couponCode, subtotal }
+      : "skip"
+  );
 
-      if (isValidPeriod && meetsMinimum && notMaxedOut) {
-        discount = Math.min(
-          Math.floor(subtotal * (coupon.percentage / 100)),
-          coupon.maxDiscount || Infinity
-        );
+  let discount = 0;
+  if (couponCode) {
+    if (isConvexConfigured) {
+      if (validation?.valid) discount = validation.discount ?? 0;
+    } else {
+      const coupon = dummyCoupons.find((c) => c.code === couponCode && c.isActive);
+      if (coupon) {
+        const now = Date.now();
+        const isValidPeriod = now >= coupon.startsAt && now <= coupon.expiresAt;
+        const meetsMinimum = subtotal >= coupon.minSubtotal;
+        const notMaxedOut = !coupon.maxUses || coupon.currentUses < coupon.maxUses;
+        if (isValidPeriod && meetsMinimum && notMaxedOut) {
+          discount = Math.min(
+            Math.floor(subtotal * (coupon.percentage / 100)),
+            coupon.maxDiscount || Infinity
+          );
+        }
       }
     }
   }
 
   const taxableAmount = subtotal - discount;
+  const taxRate = 0.1;
   const tax = Math.floor(taxableAmount * taxRate);
   const total = taxableAmount + tax;
 
@@ -52,7 +60,18 @@ export default function CartPage() {
       setCouponSuccess("");
       return;
     }
-    const coupon = coupons.find((c) => c.code === code && c.isActive);
+
+    if (isConvexConfigured) {
+      // Server-side validation happens reactively via the `validate` query;
+      // its result (valid / error) is rendered in the summary below.
+      setCouponCode(code);
+      setCouponError("");
+      setCouponSuccess(`Kupon "${code}" diterapkan. Diskon dihitung otomatis.`);
+      return;
+    }
+
+    // Demo mode: validate against dummy data.
+    const coupon = dummyCoupons.find((c) => c.code === code && c.isActive);
     if (!coupon) {
       setCouponError("Kode kupon tidak valid");
       setCouponSuccess("");
@@ -70,15 +89,16 @@ export default function CartPage() {
       return;
     }
     if (subtotal < coupon.minSubtotal) {
-      setCouponError(
-        `Minimal belanja ${formatIDR(coupon.minSubtotal)} untuk kupon ini`
-      );
+      setCouponError(`Minimal belanja ${formatIDR(coupon.minSubtotal)} untuk kupon ini`);
       setCouponSuccess("");
       return;
     }
+
     setCouponCode(code);
     setCouponError("");
-    setCouponSuccess(`Kupon "${code}" berhasil diterapkan! Diskon ${coupon.percentage}%`);
+    setCouponSuccess(
+      `Kupon "${code}" berhasil diterapkan! Diskon ${coupon.percentage}%`
+    );
   };
 
   if (items.length === 0) {
@@ -214,6 +234,14 @@ export default function CartPage() {
               )}
               {couponSuccess && (
                 <p className="text-xs text-success mt-1">{couponSuccess}</p>
+              )}
+              {isConvexConfigured && couponCode && validation && !validation.valid && (
+                <p className="text-xs text-danger mt-1">{validation.error}</p>
+              )}
+              {isConvexConfigured && couponCode && validation?.valid && (
+                <p className="text-xs text-success mt-1">
+                  Diskon {validation.percentage}% aktif
+                </p>
               )}
             </div>
 
