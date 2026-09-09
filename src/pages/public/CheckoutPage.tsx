@@ -14,6 +14,7 @@ import { formatIDR } from "@/lib/utils";
 import { useAction, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { loadSnap, midtransClientKey } from "@/lib/midtrans";
+import { useSEO } from "@/lib/seo";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -25,6 +26,13 @@ export default function CheckoutPage() {
 
   const createOrder = useMutation(api.orders.createFromCart);
   const createSnapTransaction = useAction(api.midtrans.createSnapTransaction);
+
+  useSEO({
+    title: "Checkout",
+    description:
+      "Selesaikan pembayaran pesanan Anda melalui Midtrans Snap — VA, QRIS, e-wallet, dan kartu kredit.",
+    path: "/checkout",
+  });
 
   if (!isAuthenticated) {
     return (

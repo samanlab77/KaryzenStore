@@ -1,9 +1,15 @@
 /**
  * Midtrans Snap client-side helper.
  * Loads the Snap.js SDK once (lazily) and exposes `window.snap.pay`.
+ *
+ * Environment is controlled by VITE_MIDTRANS_IS_PRODUCTION ("true" = production).
  */
 
-const SNAP_SOURCE = "https://app.sandbox.midtrans.com/snap/snap.js";
+const isProduction = import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === "true";
+
+const SNAP_SOURCE = isProduction
+  ? "https://app.midtrans.com/snap/snap.js"
+  : "https://app.sandbox.midtrans.com/snap/snap.js";
 
 declare global {
   interface Window {

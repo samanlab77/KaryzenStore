@@ -1,8 +1,28 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Download, Key, ShoppingBag, ArrowRight, Clock } from "lucide-react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
+import {
+  Download,
+  Key,
+  ShoppingBag,
+  ArrowRight,
+  Clock,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
-import { useOrdersByUser } from "@/lib/hooks";
+import { useOrdersByUser, isConvexConfigured } from "@/lib/hooks";
 import { formatIDR, formatShortDate } from "@/lib/utils";
+
+interface ActiveFile {
+  productId: string;
+  fileId: string;
+  fileName: string;
+  sizeBytes: number;
+  version: number;
+}
 
 export default function MemberDashboardPage() {
   const { user } = useAuthStore();
@@ -15,6 +35,65 @@ export default function MemberDashboardPage() {
       purchasedAt: order.paidAt || order.createdAt,
     }))
   );
+
+  // Bulk-load active download files for all purchased file products.
+  const fileProductIds = Array.from(
+    new Set(
+      purchasedItems
+        .filter((i) => i.productType === "file")
+        .map((i) => i.productId)
+    )
+  );
+  const activeFiles = useQuery(
+    api.productFiles.getActiveForProducts,
+    isConvexConfigured && fileProductIds.length > 0
+      ? { productIds: fileProductIds as Id<"products">[] }
+      : "skip"
+  );
+  const activeFileByProduct = new Map<string, ActiveFile>(
+    (activeFiles ?? []).map((f) => [f.productId, f])
+  );
+
+  // Download with server-side ownership check.
+  const [downloadTarget, setDownloadTarget] = useState<ActiveFile | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadStarted, setDownloadStarted] = useState(false);
+  const getDownloadUrl = useQuery(
+    api.productFiles.getDownloadUrl,
+    isConvexConfigured && user?.email && downloadTarget
+      ? {
+          fileId: downloadTarget.fileId as Id<"productFiles">,
+          email: user.email,
+        }
+      : "skip"
+  );
+
+  useEffect(() => {
+    if (!downloadTarget || !getDownloadUrl || downloadStarted) return;
+    if (getDownloadUrl.authorized && getDownloadUrl.url) {
+      window.open(getDownloadUrl.url, "_blank", "noopener");
+      setDownloadTarget(null);
+      setDownloadError(null);
+    } else if (getDownloadUrl.authorized === false) {
+      setDownloadError(
+        "Akses unduhan ditolak — pembayaran belum terkonfirmasi untuk produk ini."
+      );
+      setDownloadTarget(null);
+    }
+  }, [downloadTarget, getDownloadUrl, downloadStarted]);
+
+  const handleDownload = (item: { productId: string; productTitle: string }) => {
+    setDownloadError(null);
+    const file = activeFileByProduct.get(item.productId);
+    if (!file) {
+      setDownloadError(
+        `File untuk "${item.productTitle}" belum tersedia. Silakan hubungi admin.`
+      );
+      return;
+    }
+    setDownloadStarted(false);
+    setDownloadTarget(file);
+  };
 
   const totalSpent = paidOrders.reduce((sum, o) => sum + o.totalAmount, 0);
   const fileCount = purchasedItems.filter(
@@ -100,6 +179,37 @@ export default function MemberDashboardPage() {
         ))}
       </div>
 
+      {/* Download feedback */}
+      {(downloadError || downloadTarget) && (
+        <div className="card p-4 mb-6 flex items-start gap-3">
+          {downloadError ? (
+            <>
+              <AlertTriangle className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-danger flex-1">{downloadError}</p>
+              <button
+                onClick={() => setDownloadError(null)}
+                className="text-xs text-text-secondary hover:text-text"
+              >
+                Tutup
+              </button>
+            </>
+          ) : (
+            <>
+              <Loader2 className="w-4 h-4 text-primary animate-spin flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-text-secondary flex-1">
+                Menyiapkan unduhan {downloadTarget?.fileName}...
+              </p>
+              <button
+                onClick={() => setDownloadTarget(null)}
+                className="text-xs text-text-secondary hover:text-text"
+              >
+                Tutup
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Purchased Products */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -129,45 +239,56 @@ export default function MemberDashboardPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {purchasedItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="card p-4 flex items-center gap-4"
-              >
-                <img
-                  src={item.coverImage}
-                  alt={item.productTitle}
-                  className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <Link
-                    to={`/products/${item.productSlug}`}
-                    className="text-sm font-medium text-text hover:text-primary transition-colors line-clamp-1"
-                  >
-                    {item.productTitle}
-                  </Link>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    Dibeli {formatShortDate(item.purchasedAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {item.productType === "file" ? (
-                    <button className="btn-primary !py-2 !px-3 text-xs flex items-center gap-1.5">
-                      <Download className="w-3.5 h-3.5" />
-                      Unduh
-                    </button>
-                  ) : (
+            {purchasedItems.map((item, idx) => {
+              const file = activeFileByProduct.get(item.productId);
+              return (
+                <div
+                  key={idx}
+                  className="card p-4 flex items-center gap-4"
+                >
+                  <img
+                    src={item.coverImage}
+                    alt={item.productTitle}
+                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
                     <Link
-                      to="/dashboard/licenses"
-                      className="badge-primary flex items-center gap-1.5 !bg-primary/10 !text-primary text-xs"
+                      to={`/products/${item.productSlug}`}
+                      className="text-sm font-medium text-text hover:text-primary transition-colors line-clamp-1"
                     >
-                      <Key className="w-3 h-3" />
-                      Lisensi
+                      {item.productTitle}
                     </Link>
-                  )}
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      Dibeli {formatShortDate(item.purchasedAt)}
+                      {item.productType === "file" && file && (
+                        <span className="ml-2 text-text-secondary">
+                          · v{file.version} ({file.fileName})
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {item.productType === "file" ? (
+                      <button
+                        onClick={() => handleDownload(item)}
+                        className="btn-primary !py-2 !px-3 text-xs flex items-center gap-1.5"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Unduh
+                      </button>
+                    ) : (
+                      <Link
+                        to="/dashboard/licenses"
+                        className="badge-primary flex items-center gap-1.5 !bg-primary/10 !text-primary text-xs"
+                      >
+                        <Key className="w-3 h-3" />
+                        Lisensi
+                      </Link>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

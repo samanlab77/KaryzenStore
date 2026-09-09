@@ -97,6 +97,20 @@ export interface NormalizedUser {
   createdAt: number;
 }
 
+export interface NormalizedProductFile {
+  _id: string;
+  id: string;
+  productId: string;
+  version: number;
+  fileName: string;
+  storageId?: string;
+  contentType?: string;
+  sizeBytes: number;
+  releaseNotes: string;
+  isActive: boolean;
+  createdAt: number;
+}
+
 /** Helper to get document ID from either Convex or dummy data */
 export function getDocId(doc: { _id?: string; id?: string }): string {
   return doc._id ?? doc.id ?? "";

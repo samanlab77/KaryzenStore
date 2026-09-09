@@ -8,11 +8,19 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { coupons as dummyCoupons } from "@/lib/data/dummy";
 import { isConvexConfigured } from "@/lib/convexEnv";
+import { useSEO } from "@/lib/seo";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, couponCode, setCouponCode, getSubtotal, clearCart } =
     useCartStore();
   const { isAuthenticated } = useAuthStore();
+
+  useSEO({
+    title: "Keranjang Belanja",
+    description:
+      "Tinjau produk digital pilihan Anda, gunakan kupon diskon, dan lanjutkan ke pembayaran yang aman.",
+    path: "/keranjang",
+  });
   const [couponInput, setCouponInput] = useState(couponCode || "");
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");

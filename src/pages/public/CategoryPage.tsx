@@ -3,12 +3,22 @@ import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { getCategoryBySlug, getProductsByCategory } from "@/lib/data/dummy";
 import { formatIDR, truncate } from "@/lib/utils";
 import { useCartStore } from "@/stores/cartStore";
+import { useSEO } from "@/lib/seo";
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const category = slug ? getCategoryBySlug(slug) : undefined;
   const products = slug ? getProductsByCategory(slug) : [];
   const addItem = useCartStore((s) => s.addItem);
+
+  useSEO({
+    title: category ? category.name : "Kategori Tidak Ditemukan",
+    description: category
+      ? `${category.description} Belanja produk digital kategori ${category.name} di Karyzen Store.`
+      : undefined,
+    path: slug ? `/categories/${slug}` : undefined,
+    image: category?.coverImage,
+  });
 
   if (!category) {
     return (

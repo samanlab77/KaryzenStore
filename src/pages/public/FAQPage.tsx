@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSEO } from "@/lib/seo";
 
 interface FAQItem {
   question: string;
@@ -97,6 +98,13 @@ const categories = [...new Set(faqData.map((f) => f.category))];
 export default function FAQPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  useSEO({
+    title: "Pertanyaan Umum (FAQ)",
+    description:
+      "Jawaban atas pertanyaan seputar pembayaran Midtrans, unduhan produk digital, kode lisensi, dan akun Karyzen Store.",
+    path: "/faq",
+  });
 
   const filtered = activeCategory
     ? faqData.filter((f) => f.category === activeCategory)

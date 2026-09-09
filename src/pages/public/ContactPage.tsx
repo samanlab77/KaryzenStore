@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { Send, Mail, MapPin, Clock, CheckCircle2 } from "lucide-react";
+import { useSEO } from "@/lib/seo";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+
+  useSEO({
+    title: "Hubungi Kami",
+    description:
+      "Hubungi tim Karyzen Store untuk pertanyaan seputar produk, pesanan, atau dukungan teknis. Respons dalam 24 jam pada hari kerja.",
+    path: "/kontak",
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

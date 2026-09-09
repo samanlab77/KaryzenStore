@@ -62,6 +62,7 @@ export default defineSchema({
     version: v.number(),
     fileName: v.string(),
     storageId: v.optional(v.string()),
+    contentType: v.optional(v.string()),
     sizeBytes: v.number(),
     releaseNotes: v.string(),
     isActive: v.boolean(),

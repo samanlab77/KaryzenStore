@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0E14"/>
+      <stop offset="100%" stop-color="#141B29"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#F0B414" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#F0B414" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect x="24" y="24" width="1152" height="582" rx="20" fill="none" stroke="#F0B414" stroke-opacity="0.25" stroke-width="2"/>
+  <g transform="translate(88, 96)">
+    <rect width="72" height="72" rx="18" fill="#F0B414"/>
+    <text x="36" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="40" fill="#0B0E14">K</text>
+    <text x="92" y="46" font-family="Arial, sans-serif" font-weight="bold" font-size="34" fill="#FFFFFF">Karyzen Store</text>
+  </g>
+  <text x="88" y="300" font-family="Arial, sans-serif" font-weight="bold" font-size="72" fill="#FFFFFF">Toko Produk Digital</text>
+  <text x="88" y="388" font-family="Arial, sans-serif" font-weight="bold" font-size="72" fill="#F0B414">Premium Indonesia</text>
+  <text x="88" y="458" font-family="Arial, sans-serif" font-size="28" fill="#9BA3B4">Software · Lisensi · Template · E-book · Kursus Online</text>
+  <text x="88" y="506" font-family="Arial, sans-serif" font-size="24" fill="#6B7280">Pembayaran otomatis · Produk langsung tersedia</text>
+</svg>

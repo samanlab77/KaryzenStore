@@ -1,11 +1,26 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useMutation } from "convex/react";
 import { ArrowLeft, Save } from "lucide-react";
-import { categories } from "@/lib/data/dummy";
-import { Link } from "react-router-dom";
+import { api } from "../../../convex/_generated/api";
+import { useAllCategories, useAllProducts } from "@/lib/hooks";
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 export default function AdminProductNewPage() {
   const navigate = useNavigate();
+  const createProduct = useMutation(api.products.create);
+  const categories = useAllCategories();
+  const allProducts = useAllProducts();
+
   const [form, setForm] = useState({
     title: "",
     categoryId: "",
@@ -14,13 +29,51 @@ export default function AdminProductNewPage() {
     productType: "file" as "file" | "license",
     shortDescription: "",
     description: "",
+    coverImage: "",
+    isFeatured: false,
     status: "draft" as "draft" | "active" | "archived",
   });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Demo: go back to products list
-    navigate("/admin/products");
+    setError(null);
+
+    if (!form.categoryId) {
+      setError("Pilih kategori terlebih dahulu.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Ensure a unique slug.
+      let slug = slugify(form.title) || `produk-${Date.now()}`;
+      const taken = new Set(allProducts.map((p) => p.slug));
+      while (taken.has(slug)) slug = `${slug}-${Math.floor(Math.random() * 90 + 10)}`;
+
+      await createProduct({
+        title: form.title.trim(),
+        slug,
+        shortDescription: form.shortDescription.trim() || form.title.trim(),
+        description: form.description.trim() || form.shortDescription.trim() || form.title.trim(),
+        price: Number(form.price) || 0,
+        compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : undefined,
+        productType: form.productType,
+        categoryId: form.categoryId as any,
+        coverImage:
+          form.coverImage.trim() ||
+          "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&h=600&fit=crop",
+        isFeatured: form.isFeatured,
+        status: form.status,
+        licenseCount: 0,
+      });
+      navigate("/admin/products");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menyimpan produk.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -73,7 +126,7 @@ export default function AdminProductNewPage() {
               >
                 <option value="">Pilih Kategori</option>
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
+                  <option key={c._id} value={c._id}>
                     {c.name}
                   </option>
                 ))}
@@ -128,6 +181,21 @@ export default function AdminProductNewPage() {
               placeholder="Deskripsi lengkap produk..."
             />
           </div>
+
+          <div>
+            <label className="block text-xs text-text-secondary mb-1.5 font-medium">
+              URL Gambar Cover
+            </label>
+            <input
+              type="url"
+              value={form.coverImage}
+              onChange={(e) =>
+                setForm({ ...form, coverImage: e.target.value })
+              }
+              className="input w-full"
+              placeholder="https://images.unsplash.com/... (opsional)"
+            />
+          </div>
         </div>
 
         {/* Pricing */}
@@ -171,29 +239,50 @@ export default function AdminProductNewPage() {
         {/* Status */}
         <div className="card p-6 space-y-4">
           <h3 className="font-heading font-semibold text-sm text-text">
-            Status
+            Status & Unggulan
           </h3>
-          <select
-            value={form.status}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                status: e.target.value as "draft" | "active" | "archived",
-              })
-            }
-            className="input w-full"
-          >
-            <option value="draft">Draft</option>
-            <option value="active">Aktif</option>
-            <option value="archived">Arsip</option>
-          </select>
+          <div className="grid grid-cols-2 gap-4">
+            <select
+              value={form.status}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  status: e.target.value as "draft" | "active" | "archived",
+                })
+              }
+              className="input w-full"
+            >
+              <option value="draft">Draft</option>
+              <option value="active">Aktif</option>
+              <option value="archived">Arsip</option>
+            </select>
+            <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.isFeatured}
+                onChange={(e) =>
+                  setForm({ ...form, isFeatured: e.target.checked })
+                }
+                className="accent-[#D4A94E]"
+              />
+              Tampilkan di Produk Unggulan
+            </label>
+          </div>
         </div>
+
+        {error && (
+          <p className="text-sm text-danger">{error}</p>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3">
-          <button type="submit" className="btn-primary flex items-center gap-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn-primary flex items-center gap-2 disabled:opacity-50"
+          >
             <Save className="w-4 h-4" />
-            Simpan Produk
+            {saving ? "Menyimpan..." : "Simpan Produk"}
           </button>
           <Link
             to="/admin/products"

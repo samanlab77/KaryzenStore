@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Target, Eye, Heart, Users, Award, Zap } from "lucide-react";
+import { useSEO } from "@/lib/seo";
 
 const values = [
   {
@@ -35,6 +36,13 @@ const values = [
 ];
 
 export default function AboutPage() {
+  useSEO({
+    title: "Tentang Kami",
+    description:
+      "Kenali Karyzen Store — toko produk digital terpercaya di Indonesia sejak 2024. Kualitas terjamin, transparan, dan pelayanan prima.",
+    path: "/tentang",
+  });
+
   return (
     <div>
       {/* Hero */}

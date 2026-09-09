@@ -5,6 +5,7 @@ import { useActiveProducts, useCategories } from "@/lib/hooks";
 import { formatIDR, truncate } from "@/lib/utils";
 import { useCartStore } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
+import { useSEO } from "@/lib/seo";
 
 type SortKey = "default" | "price-asc" | "price-desc" | "newest";
 
@@ -17,6 +18,13 @@ export default function ProductsPage() {
   const [sort, setSort] = useState<SortKey>("default");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
   const [showFilters, setShowFilters] = useState(false);
+
+  useSEO({
+    title: "Katalog Produk Digital",
+    description:
+      "Jelajahi katalog lengkap Karyzen Store: software, lisensi aplikasi, template desain, e-book, dan kursus online. Cari, filter, dan beli dalam hitungan menit.",
+    path: "/products",
+  });
 
   const filtered = useMemo(() => {
     let result = allProducts;

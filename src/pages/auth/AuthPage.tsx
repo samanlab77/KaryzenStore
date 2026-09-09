@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { isClerkEnabled } from "@/lib/clerk";
 import { useAuth, useSignIn, useSignUp } from "@clerk/clerk-react";
 import { Loader2 } from "lucide-react";
+import { useSEO } from "@/lib/seo";
 
 const demoUsers = [
   {
@@ -354,6 +355,13 @@ function ClerkAuthCard() {
 }
 
 export default function AuthPage() {
+  useSEO({
+    title: "Masuk / Daftar",
+    description:
+      "Masuk atau daftar akun Karyzen Store untuk mengakses library produk digital, riwayat transaksi, dan kode lisensi Anda.",
+    path: "/sign-in",
+  });
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">

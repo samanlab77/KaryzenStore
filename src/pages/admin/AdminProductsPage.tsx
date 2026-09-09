@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom";
-import { Plus, Search, Edit, Eye } from "lucide-react";
-import { products, categories } from "@/lib/data/dummy";
-import { formatIDR } from "@/lib/utils";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
+import { Plus, Search, Edit } from "lucide-react";
+import { formatIDR, cn } from "@/lib/utils";
+import {
+  useAllProducts,
+  useAllCategories,
+} from "@/lib/hooks";
 
 const statusConfig = {
   active: { label: "Aktif", class: "badge-success" },
@@ -15,12 +17,18 @@ export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
+  const products = useAllProducts();
+  const categories = useAllCategories();
+
   const filtered = products.filter((p) => {
     if (search && !p.title.toLowerCase().includes(search.toLowerCase()))
       return false;
     if (statusFilter && p.status !== statusFilter) return false;
     return true;
   });
+
+  const categoryName = (id: string) =>
+    categories.find((c) => c.id === id || c._id === id)?.name ?? "—";
 
   return (
     <div>
@@ -93,11 +101,17 @@ export default function AdminProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-10 text-center text-text-secondary text-sm">
+                    Tidak ada produk yang cocok.
+                  </td>
+                </tr>
+              )}
               {filtered.map((p) => {
-                const cat = categories.find((c) => c.id === p.categoryId);
                 const sc = statusConfig[p.status];
                 return (
-                  <tr key={p.id} className="hover:bg-white/[0.02]">
+                  <tr key={p._id} className="hover:bg-white/[0.02]">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <img
@@ -116,7 +130,7 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-xs text-text-secondary hidden sm:table-cell">
-                      {cat?.name}
+                      {categoryName(p.categoryId)}
                     </td>
                     <td className="px-5 py-3 text-xs font-medium text-text">
                       {formatIDR(p.price)}
@@ -131,7 +145,7 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-5 py-3">
                       <Link
-                        to={`/admin/products/${p.id}/edit`}
+                        to={`/admin/products/${p._id}/edit`}
                         className="p-1.5 rounded-lg text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors inline-flex"
                       >
                         <Edit className="w-3.5 h-3.5" />

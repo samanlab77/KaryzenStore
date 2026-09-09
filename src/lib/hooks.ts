@@ -24,9 +24,10 @@ import type {
   NormalizedCoupon,
   NormalizedLicenseCode,
   NormalizedUser,
+  NormalizedProductFile,
 } from "@/lib/types";
 
-const isConvexConfigured = !!import.meta.env.VITE_CONVEX_URL;
+export const isConvexConfigured = !!import.meta.env.VITE_CONVEX_URL;
 
 // ── Normalization helpers ──
 
@@ -316,6 +317,54 @@ export function useLicensesForUser(
       }));
   }
   return convexLicenses;
+}
+
+// ── Admin: all products / single product / files ──
+export function useAllProducts(): NormalizedProduct[] {
+  const convexProducts = useQuery(api.products.list, isConvexConfigured ? {} : "skip");
+  if (!isConvexConfigured || convexProducts === undefined) {
+    return dummyProducts.map(normalizeProduct);
+  }
+  return convexProducts.map(normalizeProduct);
+}
+
+export function useProductById(
+  id: string | undefined
+): NormalizedProduct | undefined {
+  const convexProduct = useQuery(
+    api.products.get,
+    isConvexConfigured && id ? { id: id as Id<"products"> } : "skip"
+  );
+  if (!isConvexConfigured || convexProduct === undefined) {
+    const p = id ? dummyProducts.find((d) => d.id === id) : undefined;
+    return p ? normalizeProduct(p) : undefined;
+  }
+  return normalizeProduct(convexProduct);
+}
+
+export function useProductFiles(
+  productId: string | undefined
+): NormalizedProductFile[] {
+  const convexFiles = useQuery(
+    api.productFiles.getByProduct,
+    isConvexConfigured && productId
+      ? { productId: productId as Id<"products"> }
+      : "skip"
+  );
+  if (!isConvexConfigured || convexFiles === undefined) return [];
+  return convexFiles.map((f) => ({
+    _id: f._id,
+    id: f._id,
+    productId: f.productId,
+    version: f.version,
+    fileName: f.fileName,
+    storageId: f.storageId,
+    contentType: f.contentType,
+    sizeBytes: f.sizeBytes,
+    releaseNotes: f.releaseNotes,
+    isActive: f.isActive,
+    createdAt: f.createdAt,
+  }));
 }
 
 // ── Users ──

@@ -15,6 +15,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useSEO, productJsonLd } from "@/lib/seo";
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -25,6 +26,28 @@ export default function ProductDetailPage() {
   const items = useCartStore((s) => s.items);
   const { isAuthenticated } = useAuthStore();
   const [addedFeedback, setAddedFeedback] = useState(false);
+
+  // Dynamic SEO once product data is available (title/description update reactively).
+  useSEO({
+    title: product ? product.title : "Produk Tidak Ditemukan",
+    description: product
+      ? `${product.shortDescription} Harga ${formatIDR(product.price)}. Unduh langsung atau aktivasi lisensi setelah pembayaran.`
+      : undefined,
+    path: product ? `/products/${product.slug}` : undefined,
+    image: product?.coverImage,
+    type: "product",
+    jsonLd: product
+      ? productJsonLd({
+          title: product.title,
+          description: product.shortDescription,
+          slug: product.slug,
+          price: product.price,
+          coverImage: product.coverImage,
+          productType: product.productType,
+          soldCount: product.soldCount ?? 0,
+        })
+      : undefined,
+  });
 
   if (!product) {
     return (

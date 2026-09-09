@@ -16,6 +16,7 @@ import {
 } from "@/lib/hooks";
 import { formatIDR, truncate } from "@/lib/utils";
 import { useCartStore } from "@/stores/cartStore";
+import { useSEO, organizationJsonLd } from "@/lib/seo";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -59,6 +60,14 @@ export default function HomePage() {
   const featured = useFeaturedProducts();
   const cats = useCategories();
   const addItem = useCartStore((s) => s.addItem);
+
+  useSEO({
+    title: "Karyzen Store — Toko Produk Digital Premium",
+    description:
+      "Beli software, lisensi aplikasi, template desain, e-book, dan kursus online. Pembayaran otomatis via Midtrans, produk langsung tersedia setelah lunas.",
+    path: "/",
+    jsonLd: organizationJsonLd(),
+  });
 
   return (
     <div>
