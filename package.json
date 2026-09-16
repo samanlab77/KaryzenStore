@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "postinstall": "convex dev --once"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@clerk/backend": "^3.17.1",
